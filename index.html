@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:;">
+    <title>CrewBrew Coffee Tools</title>
+    <meta name="description" content="Premium coffee equipment for home brewers, baristas, and people who take coffee seriously.">
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    
+    <!-- Open Graph / WhatsApp / Social Media Meta Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="CrewBrew Coffee Tools">
+    <meta property="og:description" content="Premium coffee equipment for home brewers, baristas, and coffee enthusiasts. Based in Jordan.">
+    <meta property="og:image" content="coffee-brewing-setup.webp">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container header-content">
+            <a href="#/" class="logo" id="nav-logo" aria-label="CrewBrew Home">
+                CrewBrew
+            </a>
+            <nav class="nav-links" id="desktop-nav">
+                <div class="nav-dropdown-wrapper" id="brands-dropdown-wrapper">
+                    <button class="nav-dropdown-trigger" id="brands-trigger" aria-expanded="false" aria-haspopup="true">
+                        Brands
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dropdown-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <div class="nav-dropdown-menu" id="brands-menu" role="menu" aria-label="Brands">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+                <div class="nav-dropdown-wrapper" id="brewing-equipment-dropdown-wrapper">
+                    <button class="nav-dropdown-trigger" id="brewing-equipment-trigger" aria-expanded="false" aria-haspopup="true">
+                        Brewing Equipment
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dropdown-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <div class="nav-dropdown-menu" id="brewing-equipment-menu" role="menu" aria-label="Brewing Equipment">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+                <a href="#/category/accessories">Accessories</a>
+                <a href="#/about">About</a>
+            </nav>
+            <div class="header-actions" style="display: flex; align-items: center; gap: 20px;">
+                <button class="search-icon-btn" id="open-search-btn" aria-label="Search">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </button>
+                <button class="cart-icon-btn" id="open-cart-btn" aria-label="Open Cart">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    <span class="cart-badge" id="cart-badge">0</span>
+                </button>
+                <button class="mobile-menu-btn" id="mobile-menu-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="layout-container">
+        <div class="menu-overlay" id="menu-overlay"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3 class="sidebar-title">Menu</h3>
+                <button class="close-menu-btn" id="close-menu-btn">&times;</button>
+            </div>
+            <nav class="sidebar-links" id="sidebar-links">
+                <!-- Injected via JS -->
+            </nav>
+        </aside>
+
+        <main class="main-content" id="app-root">
+            <!-- Views will be injected here via JS -->
+        </main>
+    </div>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay" id="search-overlay" aria-hidden="true">
+        <div class="search-container">
+            <div class="search-header">
+                <svg class="search-input-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="global-search-input" class="global-search-input" placeholder="Search products, brands, categories..." aria-label="Search" autocomplete="off" />
+                <button class="close-search-btn" id="close-search-btn" aria-label="Close search">&times;</button>
+            </div>
+            <div class="search-results-container" id="search-results">
+                <!-- Results injected here -->
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-layout">
+                <div class="footer-col footer-brand" data-reveal="up">
+                    <a href="#/" class="logo footer-logo" aria-label="CrewBrew Home">
+                        CrewBrew
+                    </a>
+                    <p class="footer-tagline">Premium Coffee Equipment</p>
+                    <p class="footer-location">Based in Jordan.</p>
+                </div>
+                
+                <div class="footer-col footer-links-col" data-reveal="up">
+                    <h4 class="footer-heading">Explore</h4>
+                    <div class="footer-links">
+                        <a href="#/brands">Brands</a>
+                        <a href="#/about">About Us</a>
+                        <a href="#/contact">Contact</a>
+                        <a href="#/privacy">Privacy Policy</a>
+                    </div>
+                </div>
+
+                <div class="footer-col footer-social-col" data-reveal="up">
+                    <h4 class="footer-heading">Connect</h4>
+                    <div class="footer-links">
+                        <a href="https://www.instagram.com/crewbrew_/" target="_blank" rel="noopener noreferrer">Instagram</a>
+                        <a href="https://wa.me/962792801376" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-divider" data-reveal="up"></div>
+            
+            <div class="footer-bottom" data-reveal="up">
+                <p>© <span id="current-year"></span> CrewBrew Coffee Tools. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <a href="https://wa.me/962792801376" target="_blank" rel="noopener noreferrer" class="floating-wa-btn" aria-label="Contact us on WhatsApp">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+        </svg>
+    </a>
+
+    <!-- Cart Slide-out Panel -->
+    <div class="cart-overlay" id="cart-overlay"></div>
+    <div class="cart-panel" id="cart-panel">
+        <div class="cart-header">
+            <h2>Your Cart</h2>
+            <button class="close-cart-btn" id="close-cart-btn">&times;</button>
+        </div>
+        <div class="cart-items" id="cart-items-container">
+            <!-- Items will be injected here via JS -->
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total:</span>
+                <span id="cart-total-price">JOD 0.00</span>
+            </div>
+            <div class="checkout-btn">
+                <button class="whatsapp-btn" id="checkout-whatsapp-btn" style="width: 100%;">
+                    Checkout via WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="db.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
