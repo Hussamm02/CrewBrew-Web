@@ -33,3 +33,5 @@ Thumbs.db
 
 # Large media files (optional, but recommended if hosting elsewhere to stay under 100MB limit)
 bg-video.mp4
+
+.vercel

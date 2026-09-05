@@ -463,8 +463,26 @@
   class DBService {
     constructor() {
       this.supabase = null;
+      this._cache = {
+        brands: { data: null, time: 0 },
+        categories: { data: null, time: 0 },
+        products: { data: null, time: 0 }
+      };
+      this._CACHE_TTL = 3 * 60 * 1000; // 3 minutes cache for public queries to avoid rate limits
       this.init();
       this.initSupabaseClient();
+    }
+
+    invalidateCache(key = null) {
+      if (key && this._cache[key]) {
+        this._cache[key] = { data: null, time: 0 };
+      } else {
+        this._cache = {
+          brands: { data: null, time: 0 },
+          categories: { data: null, time: 0 },
+          products: { data: null, time: 0 }
+        };
+      }
     }
 
     init() {
@@ -575,7 +593,10 @@
     }
 
     // --- Data Methods ---
-    async getBrands() {
+    async getBrands(force = false) {
+      if (!force && this._cache.brands.data && (Date.now() - this._cache.brands.time < this._CACHE_TTL)) {
+        return this._cache.brands.data;
+      }
       const filterRogueBrands = (brands) => {
         return brands.filter(b => {
           if (!b.name) return true;
@@ -584,6 +605,7 @@
         });
       };
 
+      let result = [];
       if (this.isSupabaseActive()) {
         const { data, error } = await this.supabase.from('brands').select('*').order('name', { ascending: true });
         if (error) throw new Error('Failed to fetch brands from Supabase: ' + error.message);
@@ -600,9 +622,12 @@
           }
         }
         
-        return filterRogueBrands(data).map(b => this.normalizeBrand(b));
+        result = filterRogueBrands(data).map(b => this.normalizeBrand(b));
+      } else {
+        result = filterRogueBrands(JSON.parse(localStorage.getItem(KEYS.BRANDS)) || []);
       }
-      return filterRogueBrands(JSON.parse(localStorage.getItem(KEYS.BRANDS)) || []);
+      this._cache.brands = { data: result, time: Date.now() };
+      return result;
     }
 
     async getBrandById(id) {
@@ -611,11 +636,12 @@
     }
 
     async saveBrand(brandData, isEdit = false) {
+      this.invalidateCache();
       const generatedId = brandData.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       
       if (!isEdit) {
         brandData.id = brandData.id || generatedId;
-        const allBrands = await this.getBrands();
+        const allBrands = await this.getBrands(true);
         if (allBrands.some(b => b.id === brandData.id)) {
           throw new Error('This brand already exists.');
         }
@@ -654,6 +680,7 @@
     }
 
     async deleteBrand(id) {
+      this.invalidateCache();
       if (this.isSupabaseActive()) {
         const { error } = await this.supabase.from('brands').delete().eq('id', id);
         if (error) throw new Error('Supabase delete brand error: ' + error.message);
@@ -665,7 +692,11 @@
       return true;
     }
 
-    async getCategories() {
+    async getCategories(force = false) {
+      if (!force && this._cache.categories.data && (Date.now() - this._cache.categories.time < this._CACHE_TTL)) {
+        return this._cache.categories.data;
+      }
+      let result = [];
       if (this.isSupabaseActive()) {
         const { data, error } = await this.supabase.from('categories').select('*');
         if (error) throw new Error('Failed to fetch categories from Supabase: ' + error.message);
@@ -690,20 +721,29 @@
           data.push(coldBrewCat);
         }
         
-        return data;
+        result = data;
+      } else {
+        result = JSON.parse(localStorage.getItem(KEYS.CATEGORIES)) || [];
       }
-      return JSON.parse(localStorage.getItem(KEYS.CATEGORIES)) || [];
+      this._cache.categories = { data: result, time: Date.now() };
+      return result;
     }
 
-    async getProducts(filters = {}) {
-      let products = [];
-      if (this.isSupabaseActive()) {
-        const { data, error } = await this.supabase.from('products').select('*');
-        if (error) throw new Error('Failed to fetch products from Supabase: ' + error.message);
-        products = data.map(p => this.normalizeProduct(p));
+    async getProducts(filters = {}, force = false) {
+      let allProducts = [];
+      if (!force && this._cache.products.data && (Date.now() - this._cache.products.time < this._CACHE_TTL)) {
+        allProducts = this._cache.products.data;
       } else {
-        products = JSON.parse(localStorage.getItem(KEYS.PRODUCTS)) || [];
+        if (this.isSupabaseActive()) {
+          const { data, error } = await this.supabase.from('products').select('*');
+          if (error) throw new Error('Failed to fetch products from Supabase: ' + error.message);
+          allProducts = data.map(p => this.normalizeProduct(p));
+        } else {
+          allProducts = JSON.parse(localStorage.getItem(KEYS.PRODUCTS)) || [];
+        }
+        this._cache.products = { data: allProducts, time: Date.now() };
       }
+      let products = allProducts;
       if (filters.brandId) { products = products.filter(p => p.brandId === filters.brandId || p.brand_id === filters.brandId); }
       if (filters.categoryId) { products = products.filter(p => p.categoryId === filters.categoryId || p.category_id === filters.categoryId); }
       if (filters.search) {
@@ -745,6 +785,7 @@
     }
 
     async saveProduct(productData) {
+      this.invalidateCache();
       if (!productData.id) { productData.id = 'prod-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4); }
       if (!productData.stockStatus) { productData.stockStatus = 'In Stock'; }
       if (!productData.specs) { productData.specs = {}; }
@@ -775,6 +816,7 @@
     }
 
     async deleteProduct(id) {
+      this.invalidateCache();
       if (this.isSupabaseActive()) {
         const { error } = await this.supabase.from('products').delete().eq('id', id);
         if (error) throw new Error('Supabase delete product error: ' + error.message);
@@ -790,6 +832,7 @@
     }
 
     async toggleProductStock(id) {
+      this.invalidateCache();
       const product = await this.getProductById(id);
       if (product) {
         const nextStatus = (product.stockStatus === 'Out of Stock' || product.stock_status === 'Out of Stock') ? 'In Stock' : 'Out of Stock';
@@ -814,6 +857,7 @@
     }
 
     async saveVariant(variantData) {
+      this.invalidateCache();
       if (!variantData.id) { variantData.id = 'var-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4); }
       
       const dbData = {
@@ -843,6 +887,7 @@
     }
 
     async deleteVariant(id) {
+      this.invalidateCache();
       if (this.isSupabaseActive()) {
         const { error } = await this.supabase.from('product_variants').delete().eq('id', id);
         if (error) throw new Error('Supabase delete variant error: ' + error.message);
@@ -932,9 +977,13 @@
         }
 
         result.stage = 'Upload permission works';
-        const tinyPngB64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
-        const res = await fetch(`data:image/png;base64,${tinyPngB64}`);
-        const blob = await res.blob();
+        // Create 1x1 PNG blob directly in memory (avoids browser CSP connect-src blocking data: fetch)
+        const byteCharacters = atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=");
+        const byteNumbers = new Uint8Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const blob = new Blob([byteNumbers], { type: 'image/png' });
         
         const testPath = `_healthchecks/storage-test-${Date.now()}.webp`;
         const { error: upError } = await this.supabase.storage.from('crewbrew-assets').upload(testPath, blob);

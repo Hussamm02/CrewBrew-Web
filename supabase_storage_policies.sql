@@ -14,6 +14,12 @@ TO authenticated
 USING ( id = 'crewbrew-assets' );
 
 -- 2. storage.objects
+-- Public SELECT (allows anyone visiting the website to view uploaded images)
+CREATE POLICY "Public users can view crewbrew-assets images"
+ON storage.objects FOR SELECT
+TO public
+USING ( bucket_id = 'crewbrew-assets' );
+
 -- Authenticated SELECT
 CREATE POLICY "Authenticated users can read objects in crewbrew-assets"
 ON storage.objects FOR SELECT

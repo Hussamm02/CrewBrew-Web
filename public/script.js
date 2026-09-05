@@ -21,19 +21,20 @@ window.getFallbackImage = function (product, brandName) {
   else if (bName.includes('paragon')) folder = 'Nucleus paragon';
 
   let filename = '';
-  if (product.image) {
+  if (product && product.image) {
     const parts = product.image.split('/');
     filename = parts[parts.length - 1];
-  } else {
+  } else if (product && product.name) {
     filename = product.name + '.webp';
   }
-  return encodeURI(`${folder}/${filename}`);
+  return '/' + encodeURI(`${folder}/${filename}`);
 };
 
 function safeImg(src) {
   if (!src) return '';
   if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) return src;
-  return encodeURI(src);
+  const path = src.startsWith('/') ? src : '/' + src;
+  return encodeURI(path);
 }
 
 
@@ -47,9 +48,6 @@ if (currentYearEl) currentYearEl.textContent = new Date().getFullYear();
 // MOTION OBSERVERS & SCROLL LISTENERS
 // =========================================================
 let revealObserver = null;
-// =========================================================
-// FEATURED GEAR SLIDER LOGIC - REMOVED
-// =========================================================
 
 function initObservers() {
   if (revealObserver) revealObserver.disconnect();
@@ -90,11 +88,11 @@ window.addEventListener('scroll', () => {
 // SHARED NAVIGATION
 // =========================================================
 const brewingEquipmentNav = [
-  { name: 'Brewers / Drippers', href: '#/category/drippers' },
-  { name: 'AeroPress', href: '#/brand/aeropress' },
-  { name: 'Cold Brew Essentials', href: '#/collections/cold-brew' },
-  { name: 'Kettles', href: '#/category/kettles' },
-  { name: 'Scales', href: '#/category/scales' }
+  { name: 'Brewers / Drippers', href: '/category/drippers' },
+  { name: 'AeroPress', href: '/brand/aeropress' },
+  { name: 'Cold Brew Essentials', href: '/collections/cold-brew' },
+  { name: 'Kettles', href: '/category/kettles' },
+  { name: 'Scales', href: '/category/scales' }
 ];
 
 async function renderDesktopNav() {
@@ -163,13 +161,13 @@ async function renderDesktopNav() {
     brandsMenu.innerHTML = '';
     brands.forEach(b => {
       const a = document.createElement('a');
-      a.href = `#/brand/${b.id}`;
+      a.href = `/brand/${b.id}`;
       a.textContent = b.name;
       a.role = 'menuitem';
       brandsMenu.appendChild(a);
     });
     const viewAll = document.createElement('a');
-    viewAll.href = '#/brands';
+    viewAll.href = '/brands';
     viewAll.textContent = 'View All Brands';
     viewAll.role = 'menuitem';
     viewAll.style.fontWeight = '600';
@@ -246,14 +244,14 @@ async function renderSidebar() {
 
   brands.forEach(brand => {
     const a = document.createElement('a');
-    a.href = `#/brand/${brand.id}`;
+    a.href = `/brand/${brand.id}`;
     a.className = 'sidebar-sublink';
     a.textContent = brand.name;
     brandsSubmenu.appendChild(a);
   });
   
   const viewAllBrands = document.createElement('a');
-  viewAllBrands.href = '#/brands';
+  viewAllBrands.href = '/brands';
   viewAllBrands.className = 'sidebar-sublink';
   viewAllBrands.textContent = 'View All Brands';
   viewAllBrands.style.fontWeight = '600';
@@ -265,10 +263,10 @@ async function renderSidebar() {
   sidebarLinks.appendChild(navDivider);
 
   const directLinks = [
-    { name: 'Accessories', href: '#/category/accessories' },
-    { name: 'About Us', href: '#/about' },
-    { name: 'Contact', href: '#/contact' },
-    { name: 'Privacy Policy', href: '#/privacy' }
+    { name: 'Accessories', href: '/category/accessories' },
+    { name: 'About Us', href: '/about' },
+    { name: 'Contact', href: '/contact' },
+    { name: 'Privacy Policy', href: '/privacy' }
   ];
 
   directLinks.forEach(item => {
@@ -290,7 +288,7 @@ function productCard(product, brandName) {
   const isOutOfStock = stockStatus === 'Out of Stock';
   
   return `
-    <a href="#/product/${product.id}" class="card" data-reveal="up">
+    <a href="/product/${product.id}" class="card" data-reveal="up">
       <div class="card-img-wrapper">
         <img src="${safeSrc || fallbackSrc}" onerror="this.onerror=null; this.src='${fallbackSrc}';" onload="this.classList.add('loaded');" alt="${product.name}" class="card-img" />
       </div>
@@ -338,14 +336,14 @@ async function renderHome() {
   validBrandsForMarquee.forEach(brand => {
     if (brand.image && brand.image.trim() !== '') {
       brandsStripInnerHtml += `
-        <a href="#/brand/${brand.id}" class="brand-logo-item" aria-label="${brand.name}">
+        <a href="/brand/${brand.id}" class="brand-logo-item" aria-label="${brand.name}">
           <img src="${safeImg(brand.image)}" alt="${brand.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
           <span style="display:none; font-weight: 700; text-transform: uppercase; color: var(--color-gray); letter-spacing: 1px; font-size: 1.2rem; white-space: nowrap;">${brand.name}</span>
         </a>
       `;
     } else {
       brandsStripInnerHtml += `
-        <a href="#/brand/${brand.id}" class="brand-logo-item no-logo" aria-label="${brand.name}" style="text-decoration:none;">
+        <a href="/brand/${brand.id}" class="brand-logo-item no-logo" aria-label="${brand.name}" style="text-decoration:none;">
           <span style="font-weight: 700; text-transform: uppercase; color: var(--color-gray); letter-spacing: 1px; font-size: 1.2rem; white-space: nowrap;">${brand.name}</span>
         </a>
       `;
@@ -411,14 +409,17 @@ async function renderHome() {
     <div class="page-transition">
       <!-- 1. HERO -->
       <section class="hero">
-        <img src="New-Video.webp" class="hero-bg-video" alt="Hero background" aria-hidden="true" />
+        <video class="hero-bg-video" autoplay muted loop playsinline preload="metadata" poster="/coffee-brewing-setup.webp" aria-hidden="true">
+          <source src="/manual-brewing-scene.mp4" type="video/mp4" />
+          <img src="/New-Video.webp" class="hero-bg-video" alt="Hero background" />
+        </video>
         <div class="hero-overlay"></div>
         <div class="container">
           <h1 data-reveal="up" class="stagger-1">Brew Better.<br/>Every Detail Matters.</h1>
           <p data-reveal="up" class="stagger-2">Premium coffee tools for home brewers, baristas, and people who take coffee seriously.</p>
           <div class="hero-actions stagger-3" data-reveal="up">
-            <a href="#/brewing-equipment" class="hero-btn">Shop Equipment</a>
-            <a href="#/brands" class="btn-secondary">Explore Brands</a>
+            <a href="/brewing-equipment" class="hero-btn">Shop Equipment</a>
+            <a href="/brands" class="btn-secondary">Explore Brands</a>
           </div>
         </div>
       </section>
@@ -433,13 +434,13 @@ async function renderHome() {
         <div class="container">
           <div class="brand-story-grid">
             <div class="brand-story-image" data-reveal="up">
-              <img src="home-coffee-corner.webp" alt="Better Brewing" onerror="this.src='coffee_bg.webp'" />
+              <img src="/home-coffee-corner.webp" alt="Better Brewing" onerror="this.src='/coffee_bg.webp'" />
             </div>
             <div class="brand-story-content" data-reveal="up" style="transition-delay: 0.2s;">
               <span class="eyebrow">OUR APPROACH</span>
               <h2>Built for Better Brewing</h2>
               <p>We curate carefully selected coffee tools that combine precision, quality, and beautiful design for people who value the ritual as much as the result.</p>
-              <a href="#/brands" class="btn-outline-dark" style="margin-top: 20px;">Explore Our Brands &rarr;</a>
+              <a href="/brands" class="btn-outline-dark" style="margin-top: 20px;">Explore Our Brands &rarr;</a>
             </div>
           </div>
         </div>
@@ -447,12 +448,12 @@ async function renderHome() {
 
       <!-- 4. EDITORIAL BANNER -->
       <section class="editorial-banner">
-        <img src="coffee-brewing-setup.webp" class="editorial-banner-bg" alt="Coffee Setup" onerror="this.style.display='none'" />
+        <img src="/coffee-brewing-setup.webp" class="editorial-banner-bg" alt="Coffee Setup" onerror="this.style.display='none'" />
         <div class="editorial-banner-overlay"></div>
         <div class="container editorial-banner-content">
           <span class="eyebrow" data-reveal="up">THE RITUAL</span>
           <h2 data-reveal="up" class="stagger-1">Tools chosen for the ritual, not just the result.</h2>
-          <a href="#/brewing-equipment" class="btn-secondary stagger-2" data-reveal="up" style="margin-top: 10px;">Explore Equipment &rarr;</a>
+          <a href="/brewing-equipment" class="btn-secondary stagger-2" data-reveal="up" style="margin-top: 10px;">Explore Equipment &rarr;</a>
         </div>
       </section>
 
@@ -461,9 +462,9 @@ async function renderHome() {
         <div class="container">
           <h2 class="section-title" data-reveal="up">Shop by Purpose</h2>
           <div class="purpose-grid">
-            <a href="#/brewing-equipment" class="purpose-card" data-reveal="up">
+            <a href="/brewing-equipment" class="purpose-card" data-reveal="up">
               <div class="purpose-card-bg">
-                <img src="home-coffee-corner.webp" alt="For Home Brewers" onerror="this.src='coffee_bg.webp';" />
+                <img src="/home-coffee-corner.webp" alt="For Home Brewers" onerror="this.src='/coffee_bg.webp';" />
                 <div class="purpose-overlay"></div>
               </div>
               <div class="purpose-card-content">
@@ -472,9 +473,9 @@ async function renderHome() {
                 <span class="purpose-cta">Explore Home Brewing &rarr;</span>
               </div>
             </a>
-            <a href="#/category/accessories" class="purpose-card" data-reveal="up" style="transition-delay: 0.2s;">
+            <a href="/category/accessories" class="purpose-card" data-reveal="up" style="transition-delay: 0.2s;">
               <div class="purpose-card-bg">
-                <img src="barista-cafe-tools-scene.webp" alt="For Baristas" onerror="this.src='coffee_bg.webp';" />
+                <img src="/barista-cafe-tools-scene.webp" alt="For Baristas" onerror="this.src='/coffee_bg.webp';" />
                 <div class="purpose-overlay"></div>
               </div>
               <div class="purpose-card-content">
@@ -495,7 +496,7 @@ async function renderHome() {
             ${latestHtml}
           </div>
           <div style="text-align: center; margin-top: 50px;" data-reveal="up">
-            <a href="#/brewing-equipment" class="btn-outline-dark">View All Products &rarr;</a>
+            <a href="/brewing-equipment" class="btn-outline-dark">View All Products &rarr;</a>
           </div>
         </div>
       </section>
@@ -569,9 +570,9 @@ async function renderBrand(brandId) {
   appRoot.innerHTML = `
     <div class="container page-transition section-padding">
       <div class="breadcrumbs">
-        <a href="#/">Home</a> <span>/</span> <span>${brand.name}</span>
+        <a href="/">Home</a> <span>/</span> <span>${brand.name}</span>
       </div>
-      <h1 style="font-size: 2.2rem; margin-bottom: 40px; display: flex; align-items: center; gap: 20px;">
+      <h1 class="page-title-header" style="margin-bottom: 40px; display: flex; align-items: center; gap: 20px;">
         ${brand.image ? `<img src="${safeImg(brand.image)}" alt="${brand.name}" style="max-height: 40px; object-fit:contain;" />` : ''}
         ${brand.name}
       </h1>
@@ -586,7 +587,6 @@ async function renderBrand(brandId) {
 // CATEGORY PAGE
 // =========================================================
 async function renderCategory(categoryId) {
-  // Original router handled #/brand/:brandId/category/:categoryId, but let's make it more generic
   let category = null, products = [], allBrands = [];
   try {
     const categories = await dbService.getCategories();
@@ -612,9 +612,9 @@ async function renderCategory(categoryId) {
   appRoot.innerHTML = `
     <div class="container page-transition section-padding">
       <div class="breadcrumbs">
-        <a href="#/">Home</a> <span>/</span> <span>${category.name}</span>
+        <a href="/">Home</a> <span>/</span> <span>${category.name}</span>
       </div>
-      <h1 style="font-size: 2.2rem; margin-bottom: 40px;">${category.name}</h1>
+      <h1 class="page-title-header" style="margin-bottom: 40px;">${category.name}</h1>
       <div class="grid grid-4">
         ${productsHtml}
       </div>
@@ -669,32 +669,29 @@ async function renderProduct(productId) {
     specsRowsHtml = '<tr><td colspan="2" style="color: var(--color-gray);">No detailed specs available.</td></tr>';
   }
 
-
-
   appRoot.innerHTML = `
     <div class="container page-transition section-padding">
       <div class="breadcrumbs">
-        <a href="#/">Home</a> <span>/</span>
-        <a href="#/brand/${brand.id}">${brand.name}</a> <span>/</span>
+        <a href="/">Home</a> <span>/</span>
+        <a href="/brand/${brand.id}">${brand.name}</a> <span>/</span>
         <span>${product.name}</span>
       </div>
       <div class="product-details">
         <div class="product-gallery">
-          <img id="main-product-img" src="${safeSrc || fallbackSrc}" onerror="this.onerror=null; this.src='${fallbackSrc}';" onload="this.classList.add('loaded')" alt="${product.name}" style="width: 100%; object-fit: contain;" />
+          <img id="main-product-img" src="${safeSrc || fallbackSrc}" onerror="this.onerror=null; this.src='${fallbackSrc}';" onload="this.classList.add('loaded')" alt="${product.name}" />
         </div>
         <div class="product-info">
           <div class="product-brand">${brand.name}</div>
           <h1 class="product-title">${product.name}</h1>
           <div id="product-main-price" class="product-price">${product.price}</div>
           
-          <div style="margin-bottom: 20px;">
+          <div class="product-stock-wrap">
             ${isOutOfStock ? `<span class="stock-label out-of-stock">Out of Stock</span>` : `<span class="stock-label in-stock">In Stock</span>`}
           </div>
 
-          <p style="line-height: 1.8; color: var(--color-gray); margin-bottom: 30px; font-size: 1.05rem;">${product.description}</p>
+          <p class="product-description">${product.description}</p>
 
-
-          <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 40px;">
+          <div class="product-actions-wrap">
             <div class="product-qty-selector">
               <span class="product-qty-label">Quantity:</span>
               <button class="product-qty-btn" onclick="updateProductPageQty(-1)">-</button>
@@ -722,7 +719,8 @@ async function renderProduct(productId) {
         </div>
       </div>
     </div>
-  `;}
+  `;
+}
 
 // =========================================================
 // COLD BREW COLLECTION PAGE
@@ -761,12 +759,12 @@ async function renderColdBrewCollection() {
   appRoot.innerHTML = `
     <div class="container page-transition section-padding">
       <div class="breadcrumbs">
-        <a href="#/">Home</a> <span>/</span> <span>Cold Brew Essentials</span>
+        <a href="/">Home</a> <span>/</span> <span>Cold Brew Essentials</span>
       </div>
       
-      <div style="background-color: var(--color-pure-white); border: 1px solid var(--color-light-border); border-radius: var(--radius-md); padding: 60px 40px; text-align: center; margin-bottom: 50px;">
-        <h1 style="font-size: 2.8rem; margin-bottom: 20px;">Cold Brew Essentials</h1>
-        <p style="color: var(--color-gray); font-size: 1.1rem; max-width: 600px; margin: 0 auto;">
+      <div style="background-color: var(--color-pure-white); border: 1px solid var(--color-light-border); border-radius: var(--radius-md); padding: 40px 20px; text-align: center; margin-bottom: 40px;">
+        <h1 class="page-title-header" style="margin-bottom: 15px;">Cold Brew Essentials</h1>
+        <p style="color: var(--color-gray); font-size: 1rem; max-width: 600px; margin: 0 auto;">
           Everything you need to craft smooth, low-acidity cold brew coffee at home or in your cafe.
         </p>
       </div>
@@ -784,13 +782,13 @@ async function renderColdBrewCollection() {
 function renderAbout() {
   appRoot.innerHTML = `
     <div class="container page-transition section-padding" style="max-width: 800px; margin: 0 auto; text-align: center;">
-      <h1 style="font-size: 3rem; margin-bottom: 30px;">About CrewBrew</h1>
-      <p style="font-size: 1.2rem; color: var(--color-gray); line-height: 1.8; margin-bottom: 50px;">
+      <h1 class="page-title-header" style="margin-bottom: 20px;">About CrewBrew</h1>
+      <p style="font-size: 1.05rem; color: var(--color-gray); line-height: 1.8; margin-bottom: 40px;">
         Welcome to CrewBrew Coffee Tools. We are an exclusive boutique based in Jordan, dedicated to elevating the coffee experience for professional baristas and passionate home brewers alike.
       </p>
-      <div style="background-color: var(--color-pure-white); padding: 50px; border-radius: var(--radius-md); border: 1px solid var(--color-light-border); text-align: left;">
-        <h2 style="margin-bottom: 20px;">Our Mission</h2>
-        <p style="color: var(--color-gray); line-height: 1.8; font-size: 1.05rem;">
+      <div style="background-color: var(--color-pure-white); padding: 35px 25px; border-radius: var(--radius-md); border: 1px solid var(--color-light-border); text-align: left;">
+        <h2 style="margin-bottom: 15px;">Our Mission</h2>
+        <p style="color: var(--color-gray); line-height: 1.8; font-size: 0.95rem;">
           We believe that great coffee requires great tools. Our mission is to carefully curate and provide the highest quality coffee equipment from world-renowned brands like Timemore, Barista Space, AeroPress, MHW-3Bomber, and more.
         </p>
       </div>
@@ -801,23 +799,23 @@ function renderAbout() {
 function renderContact() {
   appRoot.innerHTML = `
     <div class="container page-transition section-padding" style="max-width: 900px; margin: 0 auto; text-align: center;">
-      <h1 style="font-size: 3rem; margin-bottom: 30px;">Contact Us</h1>
-      <p style="font-size: 1.2rem; color: var(--color-gray); line-height: 1.8; margin-bottom: 50px;">
+      <h1 class="page-title-header" style="margin-bottom: 20px;">Contact Us</h1>
+      <p style="font-size: 1.05rem; color: var(--color-gray); line-height: 1.8; margin-bottom: 40px;">
         We operate exclusively as an online store in Jordan. All orders and inquiries are handled directly to ensure a personalized, premium experience.
       </p>
       <div class="grid grid-2" style="text-align: left;">
-        <div style="background-color: var(--color-pure-white); padding: 50px; border-radius: var(--radius-md); border: 1px solid var(--color-light-border);">
-          <h2 style="margin-bottom: 20px;">How to Order</h2>
-          <p style="color: var(--color-gray); line-height: 1.8; margin-bottom: 30px;">
+        <div style="background-color: var(--color-pure-white); padding: 35px 25px; border-radius: var(--radius-md); border: 1px solid var(--color-light-border);">
+          <h2 style="margin-bottom: 15px;">How to Order</h2>
+          <p style="color: var(--color-gray); line-height: 1.8; margin-bottom: 25px;">
             Found the perfect tool? Simply click the "Buy Now via WhatsApp" button on any product page to chat directly with us.
           </p>
           <a href="https://wa.me/962792801376" target="_blank" rel="noopener noreferrer" class="btn-primary" style="width: auto;">
             Chat on WhatsApp
           </a>
         </div>
-        <div style="background-color: var(--color-pure-white); padding: 50px; border-radius: var(--radius-md); border: 1px solid var(--color-light-border);">
-          <h2 style="margin-bottom: 20px;">Get in Touch</h2>
-          <ul style="color: var(--color-gray); line-height: 2.5; font-size: 1.05rem;">
+        <div style="background-color: var(--color-pure-white); padding: 35px 25px; border-radius: var(--radius-md); border: 1px solid var(--color-light-border);">
+          <h2 style="margin-bottom: 15px;">Get in Touch</h2>
+          <ul style="color: var(--color-gray); line-height: 2.2; font-size: 0.95rem;">
             <li><strong style="color: var(--color-charcoal-black); display: inline-block; width: 100px;">Location:</strong> Jordan (Online Only)</li>
             <li><strong style="color: var(--color-charcoal-black); display: inline-block; width: 100px;">WhatsApp:</strong> +962792801376</li>
             <li><strong style="color: var(--color-charcoal-black); display: inline-block; width: 100px;">Instagram:</strong> @crewbrew_</li>
@@ -1033,7 +1031,7 @@ async function renderAllBrands() {
       const textFallback = `<div class="brand-card-fallback" style="${safeSrc ? 'display:none;' : 'display:flex;'}">${b.name}</div>`;
       
       brandsHtml += `
-        <a href="#/brand/${b.id}" class="brand-card" data-reveal="up">
+        <a href="/brand/${b.id}" class="brand-card" data-reveal="up">
           <div class="brand-card-img-wrapper">
             ${imgHtml}
             ${textFallback}
@@ -1049,9 +1047,9 @@ async function renderAllBrands() {
   appRoot.innerHTML = `
     <div class="container page-transition section-padding">
       <div class="breadcrumbs">
-        <a href="#/">Home</a> <span>/</span> <span>Brands</span>
+        <a href="/">Home</a> <span>/</span> <span>Brands</span>
       </div>
-      <h1 style="font-size: 2.8rem; margin-bottom: 20px; text-align: center;">Explore Our Brands</h1>
+      <h1 class="page-title-header" style="margin-bottom: 20px; text-align: center;">Explore Our Brands</h1>
       <div class="grid grid-4" style="margin-top: 40px;">
         ${brandsHtml}
       </div>
@@ -1065,8 +1063,8 @@ async function renderAllBrands() {
 function renderPrivacyPolicy() {
   appRoot.innerHTML = `
     <div class="container page-transition section-padding" style="max-width: 800px; margin: 0 auto;">
-      <h1 style="font-size: 3rem; margin-bottom: 30px; text-align: center;">Privacy Policy</h1>
-      <div style="background-color: var(--color-pure-white); padding: 50px; border-radius: var(--radius-md); border: 1px solid var(--color-light-border); color: var(--color-gray); line-height: 1.8;">
+      <h1 class="page-title-header" style="margin-bottom: 25px; text-align: center;">Privacy Policy</h1>
+      <div style="background-color: var(--color-pure-white); padding: 35px 25px; border-radius: var(--radius-md); border: 1px solid var(--color-light-border); color: var(--color-gray); line-height: 1.8;">
         <p style="margin-bottom: 20px;">At CrewBrew Coffee Tools, we value your privacy. We operate as an online store based in Jordan and aim to be transparent about how we handle your data.</p>
         
         <h3 style="color: var(--color-charcoal-black); margin-top: 30px; margin-bottom: 15px;">Information We Collect</h3>
@@ -1160,7 +1158,7 @@ async function performSearch(query) {
     if (matchedBrands.length > 0) {
       html += `<div class="search-section-title">Brands</div>`;
       matchedBrands.forEach(b => {
-        html += `<a href="#/brand/${b.id}" class="search-result-item" onclick="closeSearch()">
+        html += `<a href="/brand/${b.id}" class="search-result-item" onclick="closeSearch()">
           <div class="search-result-info"><div class="search-result-name">${b.name}</div></div>
         </a>`;
       });
@@ -1169,7 +1167,7 @@ async function performSearch(query) {
     if (matchedCategories.length > 0) {
       html += `<div class="search-section-title">Categories</div>`;
       matchedCategories.forEach(c => {
-        html += `<a href="#/category/${c.id}" class="search-result-item" onclick="closeSearch()">
+        html += `<a href="/category/${c.id}" class="search-result-item" onclick="closeSearch()">
           <div class="search-result-info"><div class="search-result-name">${c.name}</div></div>
         </a>`;
       });
@@ -1180,7 +1178,7 @@ async function performSearch(query) {
       matchedProducts.forEach(p => {
         const brand = brands.find(br => br.id === (p.brandId || p.brand_id)) || { name: '' };
         const imgSrc = safeImg(p.image) || window.getFallbackImage(p, brand.name);
-        html += `<a href="#/product/${p.id}" class="search-result-item" onclick="closeSearch()">
+        html += `<a href="/product/${p.id}" class="search-result-item" onclick="closeSearch()">
           <img src="${imgSrc}" class="search-result-img" onerror="this.style.display='none'" />
           <div class="search-result-info">
             <div class="search-result-name">${p.name}</div>
@@ -1230,7 +1228,7 @@ async function renderBrewingEquipment() {
         </div>
     </div>`;
     const navItem = brewingEquipmentNav.find(n => n.name.toLowerCase() === cat.name.toLowerCase());
-    const href = navItem ? navItem.href : `#/category/${cat.id}`;
+    const href = navItem ? navItem.href : `/category/${cat.id}`;
     
     shortcutsHtml += `
       <a href="${href}" class="category-tile" data-reveal="up" style="transition-delay: ${idx * 0.1}s;">
@@ -1253,9 +1251,9 @@ async function renderBrewingEquipment() {
   appRoot.innerHTML = `
     <div class="container page-transition section-padding">
       <div class="breadcrumbs">
-        <a href="#/">Home</a> <span>/</span> <span>Brewing Equipment</span>
+        <a href="/">Home</a> <span>/</span> <span>Brewing Equipment</span>
       </div>
-      <h1 style="font-size: 2.8rem; margin-bottom: 40px; text-align: center;">Brewing Equipment</h1>
+      <h1 class="page-title-header" style="margin-bottom: 40px; text-align: center;">Brewing Equipment</h1>
       
       ${shortcutsHtml ? `
         <div class="grid grid-4" style="margin-bottom: 60px;">
@@ -1271,10 +1269,33 @@ async function renderBrewingEquipment() {
 }
 
 // =========================================================
-// APP ROUTER
+// CLEAN SPA ROUTER & NAVIGATION SYSTEM
 // =========================================================
+function getCurrentPath() {
+  // If a legacy hash URL was accessed (e.g. #/product/123), convert it to clean URL
+  if (window.location.hash && window.location.hash.startsWith('#/')) {
+    const cleanFromHash = window.location.hash.substring(1);
+    window.history.replaceState(null, null, cleanFromHash);
+    return cleanFromHash;
+  }
+  let p = window.location.pathname || '/';
+  if (!p.startsWith('/')) p = '/' + p;
+  return p;
+}
+
+window.navigateTo = function (url) {
+  if (!url) return;
+  const target = url.startsWith('/') ? url : '/' + url;
+  if (window.location.pathname !== target) {
+    window.history.pushState(null, null, target);
+  }
+  closeMobileMenu();
+  window.scrollTo(0, 0);
+  render();
+};
+
 async function render() {
-  const hash = window.location.hash || '#/';
+  const path = getCurrentPath();
   
   if (window.stopFeaturedAutoplay) {
     window.stopFeaturedAutoplay();
@@ -1283,50 +1304,50 @@ async function render() {
   if (appRoot.innerHTML.trim() !== '') {
     appRoot.classList.remove('page-enter');
     appRoot.classList.add('page-exit');
-    await new Promise(r => setTimeout(r, 280));
+    await new Promise(r => setTimeout(r, 200));
   }
   
   appRoot.classList.remove('page-exit');
   appRoot.classList.add('page-enter');
 
-  const hashLower = hash.toLowerCase();
+  const pathLower = path.toLowerCase().replace(/\/$/, '') || '/';
 
-  if (hashLower === '#/' || hashLower === '') {
+  if (pathLower === '/' || pathLower === '') {
     await renderHome();
-  } else if (hashLower.startsWith('#/brand/') && hashLower.includes('/category/')) {
-    const parts = hash.split('/');
+  } else if (pathLower.startsWith('/brand/') && pathLower.includes('/category/')) {
+    const parts = path.split('/');
     const categoryId = parts[4];
     await renderCategory(categoryId);
-  } else if (hashLower.startsWith('#/brand/')) {
-    const parts = hash.split('/');
+  } else if (pathLower.startsWith('/brand/')) {
+    const parts = path.split('/');
     const brandId = parts[2];
     await renderBrand(brandId);
-  } else if (hashLower.startsWith('#/category/')) {
-    const parts = hash.split('/');
+  } else if (pathLower.startsWith('/category/')) {
+    const parts = path.split('/');
     const categoryId = parts[2];
     await renderCategory(categoryId);
-  } else if (hashLower.startsWith('#/product/')) {
-    const parts = hash.split('/');
+  } else if (pathLower.startsWith('/product/')) {
+    const parts = path.split('/');
     const productId = parts[2];
     await renderProduct(productId);
-  } else if (hashLower === '#/brewing-equipment') {
+  } else if (pathLower === '/brewing-equipment') {
     await renderBrewingEquipment();
-  } else if (hashLower === '#/collections/cold-brew') {
+  } else if (pathLower === '/collections/cold-brew') {
     await renderColdBrewCollection();
-  } else if (hashLower === '#/brands') {
+  } else if (pathLower === '/brands') {
     await renderAllBrands();
-  } else if (hashLower === '#/about') {
+  } else if (pathLower === '/about') {
     renderAbout();
-  } else if (hashLower === '#/contact') {
+  } else if (pathLower === '/contact') {
     renderContact();
-  } else if (hashLower === '#/privacy') {
+  } else if (pathLower === '/privacy') {
     renderPrivacyPolicy();
   } else {
     appRoot.innerHTML = `
       <div class="container page-transition section-padding" style="text-align: center; min-height: 50vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
         <h1 style="font-size: 4rem; margin-bottom: 20px;">404</h1>
         <p style="color: var(--color-gray); font-size: 1.2rem; margin-bottom: 30px;">The page you're looking for doesn't exist.</p>
-        <a href="#/" class="btn-primary">Return Home</a>
+        <a href="/" class="btn-primary">Return Home</a>
       </div>
     `;
   }
@@ -1335,7 +1356,7 @@ async function render() {
     requestAnimationFrame(() => {
       appRoot.classList.remove('page-enter');
       initObservers();
-      if (hash === '#/' || hash === '') {
+      if (pathLower === '/' || pathLower === '') {
         if (window.initFeaturedSliderEvents) {
           window.initFeaturedSliderEvents();
         }
@@ -1344,10 +1365,41 @@ async function render() {
   });
 }
 
-// Router Event Listeners
-window.addEventListener('hashchange', () => {
+// Global Click Interceptor for Clean SPA Routing
+document.addEventListener('click', (e) => {
+  const link = e.target.closest('a');
+  if (!link) return;
+  const href = link.getAttribute('href');
+  if (!href) return;
+
+  // Ignore external links, new tabs, WhatsApp, mail, tel, js
+  if (
+    link.target === '_blank' ||
+    href.startsWith('http://') ||
+    href.startsWith('https://') ||
+    href.startsWith('mailto:') ||
+    href.startsWith('tel:') ||
+    href.startsWith('javascript:')
+  ) {
+    return;
+  }
+
+  // Allow admin static portal to load normally
+  if (href.startsWith('/admin') || href.startsWith('admin')) {
+    return;
+  }
+
+  // Intercept internal routes
+  if (href.startsWith('/') || href.startsWith('#/')) {
+    e.preventDefault();
+    const cleanUrl = href.replace(/^#/, '');
+    window.navigateTo(cleanUrl);
+  }
+});
+
+// Browser Back / Forward buttons
+window.addEventListener('popstate', () => {
   closeMobileMenu();
-  window.scrollTo(0, 0);
   render();
 });
 

@@ -3,26 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; connect-src 'self' https: wss: data: blob: *.supabase.co;">
     <title>CrewBrew Coffee Tools</title>
     <meta name="description" content="Premium coffee equipment for home brewers, baristas, and people who take coffee seriously.">
-    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <link rel="icon" type="image/svg+xml" href="/logo.svg">
     
     <!-- Open Graph / WhatsApp / Social Media Meta Tags -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="CrewBrew Coffee Tools">
     <meta property="og:description" content="Premium coffee equipment for home brewers, baristas, and coffee enthusiasts. Based in Jordan.">
-    <meta property="og:image" content="coffee-brewing-setup.webp">
+    <meta property="og:image" content="/coffee-brewing-setup.webp">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="image" href="/coffee-brewing-setup.webp">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
     <header class="header">
         <div class="container header-content">
-            <a href="#/" class="logo" id="nav-logo" aria-label="CrewBrew Home">
+            <a href="/" class="logo" id="nav-logo" aria-label="CrewBrew Home">
                 CrewBrew
             </a>
             <nav class="nav-links" id="desktop-nav">
@@ -44,8 +45,8 @@
                         <!-- Injected via JS -->
                     </div>
                 </div>
-                <a href="#/category/accessories">Accessories</a>
-                <a href="#/about">About</a>
+                <a href="/category/accessories">Accessories</a>
+                <a href="/about">About</a>
             </nav>
             <div class="header-actions" style="display: flex; align-items: center; gap: 20px;">
                 <button class="search-icon-btn" id="open-search-btn" aria-label="Search">
@@ -107,7 +108,7 @@
         <div class="container">
             <div class="footer-layout">
                 <div class="footer-col footer-brand" data-reveal="up">
-                    <a href="#/" class="logo footer-logo" aria-label="CrewBrew Home">
+                    <a href="/" class="logo footer-logo" aria-label="CrewBrew Home">
                         CrewBrew
                     </a>
                     <p class="footer-tagline">Premium Coffee Equipment</p>
@@ -117,10 +118,10 @@
                 <div class="footer-col footer-links-col" data-reveal="up">
                     <h4 class="footer-heading">Explore</h4>
                     <div class="footer-links">
-                        <a href="#/brands">Brands</a>
-                        <a href="#/about">About Us</a>
-                        <a href="#/contact">Contact</a>
-                        <a href="#/privacy">Privacy Policy</a>
+                        <a href="/brands">Brands</a>
+                        <a href="/about">About Us</a>
+                        <a href="/contact">Contact</a>
+                        <a href="/privacy">Privacy Policy</a>
                     </div>
                 </div>
 
@@ -171,8 +172,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js"></script>
-    <script src="db.js"></script>
-    <script src="script.js"></script>
+    <script src="/supabase-config.js"></script>
+    <script src="/db.js"></script>
+    <script src="/script.js"></script>
 </body>
 </html>
