@@ -463,12 +463,13 @@
   class DBService {
     constructor() {
       this.supabase = null;
+      this._inFlight = {};
       this._cache = {
         brands: { data: null, time: 0 },
         categories: { data: null, time: 0 },
         products: { data: null, time: 0 }
       };
-      this._CACHE_TTL = 3 * 60 * 1000; // 3 minutes cache for public queries to avoid rate limits
+      this._CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache for public queries to avoid rate limits
       this.init();
       this.initSupabaseClient();
     }
@@ -476,12 +477,14 @@
     invalidateCache(key = null) {
       if (key && this._cache[key]) {
         this._cache[key] = { data: null, time: 0 };
+        delete this._inFlight[key];
       } else {
         this._cache = {
           brands: { data: null, time: 0 },
           categories: { data: null, time: 0 },
           products: { data: null, time: 0 }
         };
+        this._inFlight = {};
       }
     }
 
@@ -597,6 +600,20 @@
       if (!force && this._cache.brands.data && (Date.now() - this._cache.brands.time < this._CACHE_TTL)) {
         return this._cache.brands.data;
       }
+      if (!force && !this._cache.brands.data) {
+        try {
+          const local = JSON.parse(localStorage.getItem(KEYS.BRANDS));
+          if (local && Array.isArray(local) && local.length > 0) {
+            this._cache.brands = { data: local, time: Date.now() };
+            if (this.isSupabaseActive() && !this._inFlight.brands) {
+              this.getBrands(true).catch(() => {});
+            }
+            return local;
+          }
+        } catch(e) {}
+      }
+      if (this._inFlight.brands) return this._inFlight.brands;
+
       const filterRogueBrands = (brands) => {
         return brands.filter(b => {
           if (!b.name) return true;
@@ -605,29 +622,27 @@
         });
       };
 
-      let result = [];
-      if (this.isSupabaseActive()) {
-        const { data, error } = await this.supabase.from('brands').select('*').order('name', { ascending: true });
-        if (error) throw new Error('Failed to fetch brands from Supabase: ' + error.message);
-        
-        const hasColdBrew = data.some(b => b.id === 'cold-brew' || b.id === 'hussam');
-        if (hasColdBrew) {
-          try {
-            const { data: sessionData } = await this.supabase.auth.getSession();
-            if (sessionData && sessionData.session) {
-              await this.supabase.from('brands').delete().in('id', ['cold-brew', 'hussam']);
-            }
-          } catch (e) {
-            console.error("Auto-delete rogue brand failed:", e);
+      this._inFlight.brands = (async () => {
+        try {
+          let result = [];
+          if (this.isSupabaseActive()) {
+            const { data, error } = await this.supabase.from('brands').select('*').order('name', { ascending: true });
+            if (error) throw new Error('Failed to fetch brands from Supabase: ' + error.message);
+            result = filterRogueBrands(data).map(b => this.normalizeBrand(b));
+            try {
+              localStorage.setItem(KEYS.BRANDS, JSON.stringify(result));
+            } catch(e) {}
+          } else {
+            result = filterRogueBrands(JSON.parse(localStorage.getItem(KEYS.BRANDS)) || []);
           }
+          this._cache.brands = { data: result, time: Date.now() };
+          return result;
+        } finally {
+          delete this._inFlight.brands;
         }
-        
-        result = filterRogueBrands(data).map(b => this.normalizeBrand(b));
-      } else {
-        result = filterRogueBrands(JSON.parse(localStorage.getItem(KEYS.BRANDS)) || []);
-      }
-      this._cache.brands = { data: result, time: Date.now() };
-      return result;
+      })();
+
+      return this._inFlight.brands;
     }
 
     async getBrandById(id) {
@@ -696,53 +711,97 @@
       if (!force && this._cache.categories.data && (Date.now() - this._cache.categories.time < this._CACHE_TTL)) {
         return this._cache.categories.data;
       }
-      let result = [];
-      if (this.isSupabaseActive()) {
-        const { data, error } = await this.supabase.from('categories').select('*');
-        if (error) throw new Error('Failed to fetch categories from Supabase: ' + error.message);
-        
-        const hasColdBrew = data.some(c => c.id === 'cold-brew');
-        if (!hasColdBrew) {
-          const coldBrewCat = {
-            id: 'cold-brew',
-            name: 'Cold Brew',
-            description: 'Smooth, refreshing cold brew essentials.',
-            icon: '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V8z"/><path d="M8 8v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V8"/></svg>'
-          };
-          
-          try {
-            const { data: sessionData } = await this.supabase.auth.getSession();
-            if (sessionData && sessionData.session) {
-              await this.supabase.from('categories').insert([coldBrewCat]);
+      if (!force && !this._cache.categories.data) {
+        try {
+          const local = JSON.parse(localStorage.getItem(KEYS.CATEGORIES));
+          if (local && Array.isArray(local) && local.length > 0) {
+            this._cache.categories = { data: local, time: Date.now() };
+            if (this.isSupabaseActive() && !this._inFlight.categories) {
+              this.getCategories(true).catch(() => {});
             }
-          } catch (e) {
-            console.error("Auto-insert category failed:", e);
+            return local;
           }
-          data.push(coldBrewCat);
-        }
-        
-        result = data;
-      } else {
-        result = JSON.parse(localStorage.getItem(KEYS.CATEGORIES)) || [];
+        } catch(e) {}
       }
-      this._cache.categories = { data: result, time: Date.now() };
-      return result;
+      if (this._inFlight.categories) return this._inFlight.categories;
+
+      this._inFlight.categories = (async () => {
+        try {
+          let result = [];
+          if (this.isSupabaseActive()) {
+            const { data, error } = await this.supabase.from('categories').select('*');
+            if (error) throw new Error('Failed to fetch categories from Supabase: ' + error.message);
+            
+            const hasColdBrew = data.some(c => c.id === 'cold-brew');
+            if (!hasColdBrew) {
+              data.push({
+                id: 'cold-brew',
+                name: 'Cold Brew',
+                description: 'Smooth, refreshing cold brew essentials.',
+                icon: '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V8z"/><path d="M8 8v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V8"/></svg>'
+              });
+            }
+            result = data;
+            try {
+              localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(result));
+            } catch(e) {}
+          } else {
+            result = JSON.parse(localStorage.getItem(KEYS.CATEGORIES)) || [];
+          }
+          this._cache.categories = { data: result, time: Date.now() };
+          return result;
+        } finally {
+          delete this._inFlight.categories;
+        }
+      })();
+
+      return this._inFlight.categories;
     }
 
     async getProducts(filters = {}, force = false) {
       let allProducts = [];
       if (!force && this._cache.products.data && (Date.now() - this._cache.products.time < this._CACHE_TTL)) {
         allProducts = this._cache.products.data;
-      } else {
-        if (this.isSupabaseActive()) {
-          const { data, error } = await this.supabase.from('products').select('*');
-          if (error) throw new Error('Failed to fetch products from Supabase: ' + error.message);
-          allProducts = data.map(p => this.normalizeProduct(p));
-        } else {
-          allProducts = JSON.parse(localStorage.getItem(KEYS.PRODUCTS)) || [];
-        }
-        this._cache.products = { data: allProducts, time: Date.now() };
+      } else if (!force && !this._cache.products.data) {
+        try {
+          const local = JSON.parse(localStorage.getItem(KEYS.PRODUCTS));
+          if (local && Array.isArray(local) && local.length > 0) {
+            allProducts = local;
+            this._cache.products = { data: local, time: Date.now() };
+            if (this.isSupabaseActive() && !this._inFlight.products) {
+              this.getProducts({}, true).catch(() => {});
+            }
+          }
+        } catch(e) {}
       }
+
+      if (allProducts.length === 0) {
+        if (this._inFlight.products) {
+          allProducts = await this._inFlight.products;
+        } else {
+          this._inFlight.products = (async () => {
+            try {
+              let res = [];
+              if (this.isSupabaseActive()) {
+                const { data, error } = await this.supabase.from('products').select('*');
+                if (error) throw new Error('Failed to fetch products from Supabase: ' + error.message);
+                res = data.map(p => this.normalizeProduct(p));
+                try {
+                  localStorage.setItem(KEYS.PRODUCTS, JSON.stringify(res));
+                } catch(e) {}
+              } else {
+                res = JSON.parse(localStorage.getItem(KEYS.PRODUCTS)) || [];
+              }
+              this._cache.products = { data: res, time: Date.now() };
+              return res;
+            } finally {
+              delete this._inFlight.products;
+            }
+          })();
+          allProducts = await this._inFlight.products;
+        }
+      }
+
       let products = allProducts;
       if (filters.brandId) { products = products.filter(p => p.brandId === filters.brandId || p.brand_id === filters.brandId); }
       if (filters.categoryId) { products = products.filter(p => p.categoryId === filters.categoryId || p.category_id === filters.categoryId); }

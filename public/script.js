@@ -290,7 +290,7 @@ function productCard(product, brandName) {
   return `
     <a href="/product/${product.id}" class="card" data-reveal="up">
       <div class="card-img-wrapper">
-        <img src="${safeSrc || fallbackSrc}" onerror="this.onerror=null; this.src='${fallbackSrc}';" onload="this.classList.add('loaded');" alt="${product.name}" class="card-img" />
+        <img src="${safeSrc || fallbackSrc}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${fallbackSrc}';" onload="this.classList.add('loaded');" alt="${product.name}" class="card-img" />
       </div>
       <div class="card-content">
         <div class="card-subtitle">${brandName}</div>
@@ -311,9 +311,11 @@ function productCard(product, brandName) {
 async function renderHome() {
   let brands = [], categories = [], products = [];
   try {
-    brands = await dbService.getBrands();
-    categories = await dbService.getCategories();
-    products = await dbService.getProducts();
+    [brands, categories, products] = await Promise.all([
+      dbService.getBrands(),
+      dbService.getCategories(),
+      dbService.getProducts()
+    ]);
   } catch (err) {
     console.error('Failed to load home data:', err);
     appRoot.innerHTML = `<div class="container section-padding" style="color:#f87171; text-align:center;"><h2>Unable to load catalog</h2><p>Please check your connection. (${err.message})</p></div>`;
@@ -409,9 +411,9 @@ async function renderHome() {
     <div class="page-transition">
       <!-- 1. HERO -->
       <section class="hero">
-        <video class="hero-bg-video" autoplay muted loop playsinline preload="metadata" poster="/coffee-brewing-setup.webp" aria-hidden="true">
+        <video class="hero-bg-video" autoplay muted loop playsinline preload="none" poster="/coffee-brewing-setup.webp" aria-hidden="true">
           <source src="/manual-brewing-scene.mp4" type="video/mp4" />
-          <img src="/New-Video.webp" class="hero-bg-video" alt="Hero background" />
+          <img src="/coffee-brewing-setup.webp" class="hero-bg-video" alt="Hero background" />
         </video>
         <div class="hero-overlay"></div>
         <div class="container">
@@ -547,12 +549,14 @@ async function renderHome() {
 async function renderBrand(brandId) {
   let brand = null, products = [];
   try {
-    brand = await dbService.getBrandById(brandId);
+    [brand, products] = await Promise.all([
+      dbService.getBrandById(brandId),
+      dbService.getProducts({ brandId })
+    ]);
     if (!brand) {
       appRoot.innerHTML = '<div class="container section-padding">Brand not found</div>';
       return;
     }
-    products = await dbService.getProducts({ brandId });
   } catch (err) {
     console.error('Failed to load brand data:', err);
     appRoot.innerHTML = `<div class="container section-padding" style="color:#f87171; text-align:center;"><h2>Unable to load brand</h2><p>${err.message}</p></div>`;
@@ -589,10 +593,14 @@ async function renderBrand(brandId) {
 async function renderCategory(categoryId) {
   let category = null, products = [], allBrands = [];
   try {
-    const categories = await dbService.getCategories();
+    const [categories, fetchedProducts, fetchedBrands] = await Promise.all([
+      dbService.getCategories(),
+      dbService.getProducts({ categoryId }),
+      dbService.getBrands()
+    ]);
+    allBrands = fetchedBrands;
+    products = fetchedProducts;
     category = categories.find(c => c.id === categoryId) || { name: 'Category' };
-    products = await dbService.getProducts({ categoryId });
-    allBrands = await dbService.getBrands();
   } catch (err) {
     console.error('Failed to load category data:', err);
     appRoot.innerHTML = `<div class="container section-padding" style="color:#f87171; text-align:center;"><h2>Unable to load category</h2><p>${err.message}</p></div>`;
@@ -1304,7 +1312,7 @@ async function render() {
   if (appRoot.innerHTML.trim() !== '') {
     appRoot.classList.remove('page-enter');
     appRoot.classList.add('page-exit');
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise(r => setTimeout(r, 50));
   }
   
   appRoot.classList.remove('page-exit');
